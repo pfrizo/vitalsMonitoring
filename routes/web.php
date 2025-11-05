@@ -25,8 +25,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::get('/monitoring/latest-data', [MonitoringDataController::class, 'getLatestData'])
-         ->name('monitoring.latest_data');
+    Route::get('/monitoring/latest-data', [MonitoringDataController::class, 'getLatestData'])->name('monitoring.latest_data');
+    Route::get('/monitoring/critical-alerts', [MonitoringDataController::class, 'getCriticalAlerts'])->name('monitoring.critical_alerts');
 });
 
 require __DIR__.'/auth.php';

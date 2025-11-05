@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\URL;
 use App\Http\Middleware\CheckUserRole;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
@@ -22,5 +23,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(Router $router): void
     {
         $router->aliasMiddleware('role', CheckUserRole::class);
+        
+        if (str_starts_with(config('app.url'), 'httpss://')) {
+            URL::forceScheme('https');
+        }
     }
 }

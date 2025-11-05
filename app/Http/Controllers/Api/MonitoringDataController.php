@@ -45,6 +45,37 @@ class MonitoringDataController extends Controller
         return response()->json($patientsData);
     }
 
+    public function getCriticalAlerts(): JsonResponse
+    {
+        $criticalPatients = [];
+        
+        // Pega todos os pacientes com dispositivos e seus dados de status
+        $patients = Patient::whereHas('devices')
+            ->with(['latestVitals'])
+            ->select('id', 'name', 'room', 'normal_heart_rate', 'normal_temperature', 'normal_systolic_pressure', 'normal_diastolic_pressure')
+            ->get();
+
+        foreach ($patients as $patient) {
+            // Reutilizamos a sua lógica de status (que retorna uma string)
+            $status = $this->getVitalsStatus($patient->latestVitals, $patient);
+
+            // *** ESTA É A CORREÇÃO ***
+            // Trocamos if ($status['overall'] === 'high')
+            // por:
+            if ($status === 'high') {
+                $criticalPatients[] = [
+                    'id' => $patient->id,
+                    'name' => $patient->name,
+                    'room' => $patient->room ?? 'N/A', // Adicionado 'room' para o toast
+                    'status' => $status, // Agora envia a string 'high'
+                    'show_url' => route('patients.show', $patient->id),
+                ];
+            }
+        }
+
+        return response()->json($criticalPatients);
+    }
+
     private function getVitalsStatus($latestVitals, $patient)
     {
         if (!$latestVitals) {
