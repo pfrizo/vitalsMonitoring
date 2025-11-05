@@ -24,7 +24,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $router->aliasMiddleware('role', CheckUserRole::class);
         
-        if (str_starts_with(config('app.url'), 'httpss://')) {
+        if (str_starts_with(config('app.url'), 'https://')) {
             URL::forceScheme('https');
         }
     }

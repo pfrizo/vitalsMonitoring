@@ -26,7 +26,7 @@
                     <form method="POST" action="{{ route('patients.store') }}">
                         @csrf
 
-                        <input type="hidden" name="redirect_to" value="{{ request()->get('redirect_to', route('pacients.index')) }}">
+                        <input type="hidden" name="redirect_to" value="{{ request()->get('redirect_to', route('patients.index')) }}">
 
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Dados do Paciente</h3>
                         <div class="mt-4">
