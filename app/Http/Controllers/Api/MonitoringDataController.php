@@ -78,8 +78,21 @@ class MonitoringDataController extends Controller
 
     private function getVitalsStatus($latestVitals, $patient)
     {
+        $status = [
+            'overall' => 'normal', 'bpm' => 'normal', 
+            'temp' => 'normal', 'pressure' => 'normal',
+            'spo2' => 'normal' // Adicionando spo2 se você quiser monitorá-lo
+        ];
+
         if (!$latestVitals) {
-            return 'no_data'; // Paciente monitorado, mas ainda sem dados
+            return array_fill_keys(array_keys($status), 'no_data');
+        }
+
+        // *** INÍCIO DA NOVA LÓGICA ***
+        // Se o BPM for null ou 0, o dispositivo foi removido.
+        if (is_null($latestVitals->heart_rate) || $latestVitals->heart_rate == 0) {
+            // Preenchemos todos os status com 'device_removed'
+            return array_fill_keys(array_keys($status), 'device_removed');
         }
 
         $level = 0; // 0 = normal, 1 = moderate (amarelo), 2 = high (vermelho)
@@ -114,8 +127,8 @@ class MonitoringDataController extends Controller
         }
         
         // Retorna o status final
-        if ($level === 2) return 'high';
-        if ($level === 1) return 'moderate';
-        return 'normal';
+        if ($level === 2) $status['overall'] = 'high';
+        if ($level === 1) $status['overall'] = 'moderate';
+        return $status;
     }
 }

@@ -19,6 +19,8 @@ class VitalsHistory extends Model
         'diastolic_pressure',
         'patient_id',
         'device_id',
+        'spo2',
+        'finger_detected',
     ];
 
     /**

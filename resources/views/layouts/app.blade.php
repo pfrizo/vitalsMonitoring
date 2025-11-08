@@ -3,76 +3,100 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>{{ config('app.name', 'Laravel') }}</title>
-
-        <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-
-        <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased" x-data='{
-        liveCriticalAlerts: [], 
-        dismissedAlertIDs: [], 
-
-        initGlobalPoller() {
-            this.fetchCriticalData();
-            setInterval(() => {
+    
+    <body class="font-sans antialiased" 
+        x-data='{
+            /* === Lógica dos Alertas Globais === */
+            liveCriticalAlerts: [], 
+            dismissedAlertIDs: [], 
+        
+            initGlobalPoller() {
                 this.fetchCriticalData();
-            }, 20000); // Pode diminuir para 10000 (10s) se quiser mais responsivo
-        },
-
-        fetchCriticalData() {
-            const token = document.querySelector(`meta[name="csrf-token"]`).getAttribute(`content`);
-            
-            fetch(`{{ route('monitoring.critical_alerts') }}`, {
-                headers: {
-                    "Accept": "application/json",
-                    "X-Requested-With": "XMLHttpRequest",
-                    "X-CSRF-TOKEN": token
+                setInterval(() => { this.fetchCriticalData(); }, 15000);
+            },
+        
+            fetchCriticalData() {
+                const token = document.querySelector(`meta[name="csrf-token"]`).getAttribute(`content`);
+                fetch(`{{ route('monitoring.critical_alerts') }}`, {
+                    headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest", "X-CSRF-TOKEN": token }
+                })
+                .then(res => res.json())
+                .then(data => { this.liveCriticalAlerts = data; })
+                .catch(err => console.error(`Erro no poller global:`, err));
+            },
+        
+            dismissAlert(patientId) {
+                if (!this.dismissedAlertIDs.includes(patientId)) {
+                    this.dismissedAlertIDs.push(patientId);
                 }
-            })
-            .then(res => res.json())
-            .then(data => {
-                // LÓGICA ATUALIZADA:
-                // Simplesmente define a lista de alertas para ser o que a API diz.
-                // Se um paciente melhorar, ele desaparecerá da data e o Alpine
-                // o removerá da tela automaticamente.
-                this.liveCriticalAlerts = data; 
-            })
-            .catch(err => console.error(`Erro no poller global:`, err));
-        },
+            },
 
-        dismissAlert(patientId) {
-            // LÓGICA ATUALIZADA:
-            // Adiciona o ID à lista de "dispensados" para que o x-for o filtre,
-            // mesmo que ele continue vindo da API.
-            if (!this.dismissedAlertIDs.includes(patientId)) {
-                this.dismissedAlertIDs.push(patientId);
+            /* === Lógica do Dashboard (Movida para cá) === */
+            patientsData: {},
+            isLoading: true,
+            intervalId: null,
+
+            fetchLatestData() {
+                const self = this;
+                const token = document.querySelector(`meta[name="csrf-token"]`).getAttribute(`content`);
+                
+                fetch(`{{ route('monitoring.latest_data') }}`, {
+                    headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest", "X-CSRF-TOKEN": token }
+                })
+                .then(response => {
+                    // *** CORREÇÃO AQUI ***
+                    // Trocado aspas simples por backticks (`)
+                    if (!response.ok) { throw new Error(`Network response was not ok`); }
+                    return response.json();
+                })
+                .then(data => {
+                    self.patientsData = data;
+                    self.isLoading = false;
+                })
+                .catch(error => {
+                    // *** CORREÇÃO AQUI ***
+                    // Trocado aspas simples por backticks (`)
+                    console.error(`Erro ao buscar dados de monitoramento:`, error);
+                    self.isLoading = false;
+                });
             }
-        }
-    }'
-    x-init="initGlobalPoller()">
+        }'
+        x-init="
+            initGlobalPoller(); // <- Inicia o poller de alertas globais
+            
+            // Inicia o poller do dashboard APENAS SE estivermos na página do dashboard
+            if ($refs.dashboardPage) {
+                fetchLatestData();
+                intervalId = setInterval(() => fetchLatestData(), 7000);
+            }
+        "
+    >
         <div class="min-h-screen bg-gray-100">
             @include('layouts.navigation')
 
-            <!-- Page Heading -->
-            @isset($header)
+            @if (isset($header))
                 <header class="bg-white shadow">
                     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                         {{ $header }}
                     </div>
                 </header>
-            @endisset
+            @endif
 
-            <!-- Page Content -->
             <main>
-                {{ $slot }}
+                <div x-ref="dashboardPage">
+                    {{ $slot }}
+                </div>
             </main>
         </div>
+
 
         <div 
             class="fixed top-5 right-5 z-50 w-full max-w-sm space-y-3"
@@ -102,7 +126,7 @@
                             <p class="mt-1 text-sm text-gray-700">
                                 Paciente <strong x-text="patient.name"></strong> (Quarto: <span x-text="patient.room ?? 'N/A'"></span>) requer atenção imediata.
                             </p>
-                            <a :href="'{{ url('monitoring.index') }}'" class="mt-2 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                            <a :href="'{{ url('dashboard') }}'" class="mt-2 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500">
                                 Ir para o Painel de Monitoramento
                             </a>
                         </div>
@@ -119,5 +143,5 @@
                 </div>
             </template>
         </div>
-    </body>
+        </body>
 </html>
