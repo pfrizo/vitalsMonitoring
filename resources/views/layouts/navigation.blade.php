@@ -21,9 +21,13 @@
                         {{ __('Dispositivos') }}
                     </x-nav-link>
 
-                    <x-nav-link href="#" :active="request()->routeIs('users.*')">
-                        {{ __('Usuários') }}
-                    </x-nav-link>
+                    @if(Auth::user()->role === 'admin')
+                        <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
+                            <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
+                                {{ __('Usuários') }}
+                            </x-nav-link>
+                        </div>
+                    @endif
                     
                     <x-nav-link :href="route('monitoring.index')" :active="request()->routeIs('monitoring.index')">
                         {{ __('Monitoramento') }}

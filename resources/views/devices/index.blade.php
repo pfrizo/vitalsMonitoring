@@ -22,11 +22,13 @@
                         </div>
                     @endif
 
-                    <div class="flex justify-end mb-4">
-                        <a href="{{ route('devices.create', ['redirect_to' => url()->current()]) }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            Cadastrar Novo Dispositivo
-                        </a>
-                    </div>
+                    @if(Auth::user()->isAdmin())
+                        <div class="flex justify-end mb-4">
+                            <a href="{{ route('devices.create', ['redirect_to' => url()->current()]) }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                Cadastrar Novo Dispositivo
+                            </a>
+                        </div>
+                    @endif
                     
                     <div class="overflow-x-auto">
                         <table class="w-full table-fixed divide-y divide-gray-200">
@@ -70,12 +72,14 @@
                                                 </a>
                                                 
                                                 <!-- ATUALIZAÇÃO 2: Botão de Apagar -->
-                                                <button @click.prevent="deviceToDelete = {{ $device->id }}; confirmingDeviceDeletion = true" 
-                                                        class="text-red-600 hover:text-red-900" title="Apagar">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" />
-                                                    </svg>
-                                                </button>
+                                                @if(Auth::user()->isAdmin())
+                                                    <button @click.prevent="deviceToDelete = {{ $device->id }}; confirmingDeviceDeletion = true" 
+                                                            class="text-red-600 hover:text-red-900" title="Apagar">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    </button>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
