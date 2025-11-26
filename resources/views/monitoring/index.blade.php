@@ -83,7 +83,6 @@
                                                 <span class="text-sm font-medium text-gray-500">SpO2</span>
                                                 <span class="text-lg font-bold"
                                                     :class="{
-                                                        /* AGORA USA O STATUS ESPECÍFICO DO SPO2 */
                                                         'text-gray-900': patient.status.spo2 === 'normal',
                                                         'text-yellow-600': patient.status.spo2 === 'moderate',
                                                         'text-red-600': patient.status.spo2 === 'high'

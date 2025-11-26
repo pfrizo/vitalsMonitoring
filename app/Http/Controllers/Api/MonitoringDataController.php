@@ -67,18 +67,18 @@ class MonitoringDataController extends Controller
             ->get();
 
         foreach ($patients as $patient) {
-            // Reutilizamos a sua lógica de status (que retorna uma string)
+            // Agora $status é um ARRAY (ex: ['overall' => 'high', 'bpm' => '...'])
             $status = $this->getVitalsStatus($patient->latestVitals, $patient);
 
-            // *** ESTA É A CORREÇÃO ***
-            // Trocamos if ($status['overall'] === 'high')
-            // por:
-            if ($status === 'high') {
+            // *** A CORREÇÃO ESTÁ AQUI ***
+            // Antes era: if ($status === 'high')
+            // Agora acessamos a chave 'overall':
+            if ($status['overall'] === 'high') {
                 $criticalPatients[] = [
                     'id' => $patient->id,
                     'name' => $patient->name,
-                    'room' => $patient->room ?? 'N/A', // Adicionado 'room' para o toast
-                    'status' => $status, // Agora envia a string 'high'
+                    'room' => $patient->room ?? 'N/A',
+                    'status' => $status, // Envia o objeto completo, caso precise no front
                     'show_url' => route('patients.show', $patient->id),
                 ];
             }

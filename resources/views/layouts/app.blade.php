@@ -20,7 +20,7 @@
         
             initGlobalPoller() {
                 this.fetchCriticalData();
-                setInterval(() => { this.fetchCriticalData(); }, 15000);
+                setInterval(() => { this.fetchCriticalData(); }, 5000);
             },
         
             fetchCriticalData() {
@@ -52,8 +52,6 @@
                     headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest", "X-CSRF-TOKEN": token }
                 })
                 .then(response => {
-                    // *** CORREÇÃO AQUI ***
-                    // Trocado aspas simples por backticks (`)
                     if (!response.ok) { throw new Error(`Network response was not ok`); }
                     return response.json();
                 })
@@ -62,20 +60,17 @@
                     self.isLoading = false;
                 })
                 .catch(error => {
-                    // *** CORREÇÃO AQUI ***
-                    // Trocado aspas simples por backticks (`)
                     console.error(`Erro ao buscar dados de monitoramento:`, error);
                     self.isLoading = false;
                 });
             }
         }'
         x-init="
-            initGlobalPoller(); // <- Inicia o poller de alertas globais
+            initGlobalPoller();
             
-            // Inicia o poller do dashboard APENAS SE estivermos na página do dashboard
             if ($refs.dashboardPage) {
                 fetchLatestData();
-                intervalId = setInterval(() => fetchLatestData(), 7000);
+                intervalId = setInterval(() => fetchLatestData(), 5000);
             }
         "
     >
@@ -126,7 +121,7 @@
                             <p class="mt-1 text-sm text-gray-700">
                                 Paciente <strong x-text="patient.name"></strong> (Quarto: <span x-text="patient.room ?? 'N/A'"></span>) requer atenção imediata.
                             </p>
-                            <a :href="'{{ url('dashboard') }}'" class="mt-2 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                            <a :href="'{{ url('monitoring') }}'" class="mt-2 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500">
                                 Ir para o Painel de Monitoramento
                             </a>
                         </div>
