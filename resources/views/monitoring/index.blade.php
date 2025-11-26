@@ -62,30 +62,53 @@
                                 
                                 <template x-if="patient.latestVitals && patient.status.overall !== 'device_removed'">
                                     <div class="space-y-2">
-                                        <div class="flex justify-between items-center border-t pt-2">
-                                            <span class="text-sm font-medium text-gray-500">Batimentos</span>
-                                            <span class="text-lg font-bold"
-                                                  :class="{
-                                                      'text-gray-900': patient.status.bpm === 'normal' || patient.status.bpm === 'no_data',
-                                                      'text-yellow-600': patient.status.bpm === 'moderate',
-                                                      'text-red-600': patient.status.bpm === 'high'
-                                                  }">
-                                                <span x-text="patient.latestVitals.heart_rate"></span>
-                                                <span class="text-xs font-normal">bpm</span>
-                                            </span>
-                                        </div>
-                                        <div class="flex justify-between items-center border-t pt-2">
-                                            <span class="text-sm font-medium text-gray-500">Temperatura</span>
-                                             <span class="text-lg font-bold"
-                                                  :class="{
-                                                      'text-gray-900': patient.status.temp === 'normal' || patient.status.temp === 'no_data',
-                                                      'text-yellow-600': patient.status.temp === 'moderate',
-                                                      'text-red-600': patient.status.temp === 'high'
-                                                  }">
-                                                <span x-text="patient.latestVitals.temperature_formatted"></span>
-                                                <span class="text-xs font-normal">°C</span>
-                                            </span>
-                                        </div>
+                                        
+                                        <template x-if="patient.latestVitals.heart_rate !== null">
+                                            <div class="flex justify-between items-center border-t pt-2">
+                                                <span class="text-sm font-medium text-gray-500">Batimentos</span>
+                                                <span class="text-lg font-bold"
+                                                      :class="{
+                                                          'text-gray-900': patient.status.bpm === 'normal' || patient.status.bpm === 'no_data',
+                                                          'text-yellow-600': patient.status.bpm === 'moderate',
+                                                          'text-red-600': patient.status.bpm === 'high'
+                                                      }">
+                                                    <span x-text="patient.latestVitals.heart_rate"></span>
+                                                    <span class="text-xs font-normal">bpm</span>
+                                                </span>
+                                            </div>
+                                        </template>
+
+                                        <template x-if="patient.latestVitals.spo2 !== null">
+                                            <div class="flex justify-between items-center border-t pt-2">
+                                                <span class="text-sm font-medium text-gray-500">SpO2</span>
+                                                <span class="text-lg font-bold"
+                                                    :class="{
+                                                        /* AGORA USA O STATUS ESPECÍFICO DO SPO2 */
+                                                        'text-gray-900': patient.status.spo2 === 'normal',
+                                                        'text-yellow-600': patient.status.spo2 === 'moderate',
+                                                        'text-red-600': patient.status.spo2 === 'high'
+                                                    }">
+                                                    <span x-text="patient.latestVitals.spo2"></span>
+                                                    <span class="text-xs font-normal">%</span>
+                                                </span>
+                                            </div>
+                                        </template>
+
+                                        <template x-if="patient.latestVitals.temperature_formatted !== null">
+                                            <div class="flex justify-between items-center border-t pt-2">
+                                                <span class="text-sm font-medium text-gray-500">Temperatura</span>
+                                                 <span class="text-lg font-bold"
+                                                      :class="{
+                                                          'text-gray-900': patient.status.temp === 'normal' || patient.status.temp === 'no_data',
+                                                          'text-yellow-600': patient.status.temp === 'moderate',
+                                                          'text-red-600': patient.status.temp === 'high'
+                                                      }">
+                                                    <span x-text="patient.latestVitals.temperature_formatted"></span>
+                                                    <span class="text-xs font-normal">°C</span>
+                                                </span>
+                                            </div>
+                                        </template>
+
                                         <template x-if="patient.latestVitals.systolic && patient.latestVitals.diastolic">
                                             <div class="flex justify-between items-center border-t pt-2">
                                                 <span class="text-sm font-medium text-gray-500">Pressão</span>
@@ -100,6 +123,17 @@
                                                 </span>
                                             </div>
                                         </template>
+
+                                        <template x-if="patient.latestVitals.finger_detected !== null">
+                                            <div class="flex justify-between items-center border-t pt-2">
+                                                <span class="text-sm font-medium text-gray-500">Sensor (Dedo)</span>
+                                                <span class="text-sm font-bold"
+                                                      :class="patient.latestVitals.finger_detected ? 'text-green-600' : 'text-orange-500'">
+                                                    <span x-text="patient.latestVitals.finger_detected ? 'Detectado' : 'Não Detectado'"></span>
+                                                </span>
+                                            </div>
+                                        </template>
+
                                         <div class="mt-4 pt-2 border-t border-dashed border-gray-300 text-right">
                                              <p class="text-xs text-gray-500">
                                                  Última leitura:

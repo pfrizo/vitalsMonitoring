@@ -12,35 +12,46 @@ class MonitoringDataController extends Controller
     public function getLatestData(): JsonResponse
     {
         $patientsData = Patient::whereHas('devices')
-                            ->with(['latestVitals' => function ($query) {
-                                $query->select('vitals_history.patient_id', 'heart_rate', 'temperature', 'systolic_pressure', 'diastolic_pressure', 'created_at'); 
-                            }])
-                            ->select('id', 'name', 'room', 
-                                     'normal_heart_rate', 'normal_temperature', 
-                                     'normal_systolic_pressure', 'normal_diastolic_pressure') // <-- Adicionado
-                            ->orderBy('name')
-                            ->get()
-                            ->mapWithKeys(function ($patient) {
-                                
-                                // ATUALIZAÇÃO: Calcula o status do paciente
-                                $status = $this->getVitalsStatus($patient->latestVitals, $patient);
+            ->with([
+                'devices',
+                'latestVitals' => function ($query) {
+                    // 1. ADICIONADO: spo2 e finger_detected no select
+                    $query->select('vitals_history.patient_id', 'heart_rate', 'temperature', 'systolic_pressure', 'diastolic_pressure', 'spo2', 'finger_detected', 'created_at'); 
+                }
+            ])
+            ->select('id', 'name', 'room', 
+                     'normal_heart_rate', 'normal_temperature', 
+                     'normal_systolic_pressure', 'normal_diastolic_pressure')
+            ->orderBy('name')
+            ->get()
+            ->mapWithKeys(function ($patient) {
+                
+                $status = $this->getVitalsStatus($patient->latestVitals, $patient);
 
-                                return [$patient->id => [
-                                    'id' => $patient->id,
-                                    'name' => $patient->name,
-                                    'room' => $patient->room ?? 'N/A',
-                                    'status' => $status, // <-- Envia o status para o front-end
-                                    'latestVitals' => $patient->latestVitals ? [
-                                        'heart_rate' => $patient->latestVitals->heart_rate,
-                                        'temperature_formatted' => number_format($patient->latestVitals->temperature, 1, ',', '.'),
-                                        'systolic' => $patient->latestVitals->systolic_pressure,
-                                        'diastolic' => $patient->latestVitals->diastolic_pressure,
-                                        'timestamp_relative' => $patient->latestVitals->created_at->diffForHumans(),
-                                        'timestamp_full' => $patient->latestVitals->created_at->format('d/m/Y H:i:s'),
-                                    ] : null, 
-                                    'show_url' => route('patients.show', $patient->id), 
-                                ]];
-                            });
+                return [$patient->id => [
+                    'id' => $patient->id,
+                    'name' => $patient->name,
+                    'room' => $patient->room ?? 'N/A',
+                    'status' => $status,
+                    'deviceName' => $patient->devices->first()->name ?? null,
+                    
+                    // 2. ATUALIZADO: Mapeamento dos novos campos
+                    'latestVitals' => $patient->latestVitals ? [
+                        'heart_rate' => $patient->latestVitals->heart_rate,
+                        'temperature_formatted' => number_format($patient->latestVitals->temperature, 1, ',', '.'),
+                        'systolic' => $patient->latestVitals->systolic_pressure,
+                        'diastolic' => $patient->latestVitals->diastolic_pressure,
+                        
+                        // Novos Campos:
+                        'spo2' => $patient->latestVitals->spo2,
+                        'finger_detected' => $patient->latestVitals->finger_detected, // true, false ou null
+                        
+                        'timestamp_relative' => $patient->latestVitals->created_at->diffForHumans(),
+                        'timestamp_full' => $patient->latestVitals->created_at->format('d/m/Y H:i:s'),
+                    ] : null, 
+                    'show_url' => route('patients.show', $patient->id), 
+                ]];
+            });
 
         return response()->json($patientsData);
     }
@@ -81,54 +92,68 @@ class MonitoringDataController extends Controller
         $status = [
             'overall' => 'normal', 'bpm' => 'normal', 
             'temp' => 'normal', 'pressure' => 'normal',
-            'spo2' => 'normal' // Adicionando spo2 se você quiser monitorá-lo
+            'spo2' => 'normal' 
         ];
 
         if (!$latestVitals) {
             return array_fill_keys(array_keys($status), 'no_data');
         }
 
-        // *** INÍCIO DA NOVA LÓGICA ***
-        // Se o BPM for null ou 0, o dispositivo foi removido.
+        // Checagem de dispositivo removido (BPM nulo ou 0)
         if (is_null($latestVitals->heart_rate) || $latestVitals->heart_rate == 0) {
-            // Preenchemos todos os status com 'device_removed'
             return array_fill_keys(array_keys($status), 'device_removed');
         }
 
-        $level = 0; // 0 = normal, 1 = moderate (amarelo), 2 = high (vermelho)
+        $overallLevel = 0; // 0=normal, 1=moderate, 2=high
 
-        // --- 1. Checagem de Temperatura ---
-        // Padrão: +/- 1.0°C (mod), +/- 2.0°C (alto)
+        // --- 1. Temperatura ---
         $tempDiff = abs($latestVitals->temperature - $patient->normal_temperature);
         if ($tempDiff >= 2.0) {
-            $level = 2; // Alto
+            $status['temp'] = 'high';
+            $overallLevel = 2;
         } elseif ($tempDiff >= 1.0) {
-            $level = max($level, 1); // Moderado
+            $status['temp'] = 'moderate';
+            $overallLevel = max($overallLevel, 1);
         }
 
-        // --- 2. Checagem de Batimentos Cardíacos ---
-        // Padrão: +/- 20% (mod), +/- 40% (alto)
+        // --- 2. Batimentos ---
         $bpmDiff = abs($latestVitals->heart_rate - $patient->normal_heart_rate);
         if ($bpmDiff >= ($patient->normal_heart_rate * 0.40)) {
-            $level = 2; // Alto
+            $status['bpm'] = 'high';
+            $overallLevel = 2;
         } elseif ($bpmDiff >= ($patient->normal_heart_rate * 0.20)) {
-            $level = max($level, 1); // Moderado
+            $status['bpm'] = 'moderate';
+            $overallLevel = max($overallLevel, 1);
         }
 
-        // --- 3. Checagem de Pressão Sistólica ---
-        // Padrão: +/- 15% (mod), +/- 25% (alto)
+        // --- 3. Pressão ---
         if ($latestVitals->systolic_pressure) {
             $sysDiff = abs($latestVitals->systolic_pressure - $patient->normal_systolic_pressure);
             if ($sysDiff >= ($patient->normal_systolic_pressure * 0.25)) {
-                $level = 2; // Alto
+                $status['pressure'] = 'high';
+                $overallLevel = 2;
             } elseif ($sysDiff >= ($patient->normal_systolic_pressure * 0.15)) {
-                $level = max($level, 1); // Moderado
+                $status['pressure'] = 'moderate';
+                $overallLevel = max($overallLevel, 1);
+            }
+        }
+
+        // --- 4. SpO2 (Saturação de Oxigênio) ---
+        // Lógica: < 90% é Crítico, < 95% é Atenção
+        if (!is_null($latestVitals->spo2)) {
+            if ($latestVitals->spo2 < 90) {
+                $status['spo2'] = 'high';
+                $overallLevel = 2; // Alto Risco
+            } elseif ($latestVitals->spo2 < 95) {
+                $status['spo2'] = 'moderate';
+                $overallLevel = max($overallLevel, 1); // Atenção
             }
         }
         
-        // Retorna o status final
-        if ($level === 2) $status['overall'] = 'high';
-        if ($level === 1) $status['overall'] = 'moderate';
+        // Define o status 'overall' final
+        if ($overallLevel === 2) $status['overall'] = 'high';
+        if ($overallLevel === 1) $status['overall'] = 'moderate';
+
         return $status;
     }
 }
