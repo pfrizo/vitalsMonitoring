@@ -46,11 +46,13 @@
                                 <li class="py-3 text-sm text-gray-500">Nenhum paciente recente.</li>
                             @endforelse
                         </ul>
-                        <div class="mt-4 pt-4 border-t border-gray-200">
-                            <a href="{{ route('patients.create', ['redirect_to' => url()->current()]) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition duration-150 ease-in-out">
-                                + Cadastrar Novo Paciente
-                            </a>
-                        </div>
+                        @if(Auth::user()->isAdmin())
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <a href="{{ route('patients.create', ['redirect_to' => url()->current()]) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition duration-150 ease-in-out">
+                                    + Cadastrar Novo Paciente
+                                </a>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -79,11 +81,13 @@
                                 <li class="py-3 text-sm text-gray-500">Nenhum dispositivo recente.</li>
                             @endforelse
                         </ul>
-                        <div class="mt-4 pt-4 border-t border-gray-200">
-                            <a href="{{ route('devices.create', ['redirect_to' => url()->current()]) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition duration-150 ease-in-out">
-                                + Cadastrar Novo Dispositivo
-                            </a>
-                        </div>
+                        @if(Auth::user()->isAdmin())
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <a href="{{ route('devices.create', ['redirect_to' => url()->current()]) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition duration-150 ease-in-out">
+                                    + Cadastrar Novo Dispositivo
+                                </a>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>

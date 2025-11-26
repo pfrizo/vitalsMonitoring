@@ -43,6 +43,13 @@ class Patient extends Model
         return $this->hasOne(VitalsHistory::class)->latestOfMany();
     }
 
+    protected static function booted(): void
+    {
+        static::deleting(function ($patient) {
+            $patient->devices()->update(['patient_id' => null]);
+        });
+    }
+
     public function devices(): HasMany
     {
         return $this->hasMany(Device::class);
